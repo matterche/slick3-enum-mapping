@@ -2,20 +2,28 @@ package models
 
 import javax.inject.{Inject, Singleton}
 
+import models.Bar.Bar
+import models.Color.Color
 import play.api.db.slick.DatabaseConfigProvider
 import slick.driver.JdbcProfile
 
 import scala.concurrent.ExecutionContext
 
-class Color extends Enumeration {
+object Color extends Enumeration {
   type Color = Value
   val Blue = Value("Blue")
   val Red = Value("Red")
   val Green = Value("Green")
 }
-object Color extends Color
 
-case class Sample(name:String, id:Int, c:Color)
+object Bar extends Enumeration {
+  type Bar = Value
+  val b1 = Value
+  val b2 = Value
+  val b3 = Value
+}
+
+case class Sample(name:String, id:Int, c:Color, b:Bar)
 
 // Schemas
 @Singleton
@@ -28,12 +36,15 @@ class ColorDao @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: 
     def name  = column[String]("NAME")
     def id    = column[Int]("ID")
     def color = column[Color]("COLOR")
-    def * = (name, id, color) <> (Sample.tupled, Sample.unapply)
+    def bar   = column[Bar]("BAR")
+    def * = (name, id, color, bar) <> (Sample.tupled, Sample.unapply)
   }
-
-  def enumStringMapper(enum: Enumeration) = MappedColumnType.base[enum.Value, String](
+  implicit val colorMapper = MappedColumnType.base[Color, String](
     e => e.toString,
-    s => enum.withName(s)
+    s => Color.withName(s)
   )
-  implicit val colorMapper = enumStringMapper(Color)
+  implicit val barMapper = MappedColumnType.base[Bar, Int](
+    e => e.id,
+    i => Bar.apply(i)
+  )
 }
